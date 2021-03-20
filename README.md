@@ -52,8 +52,8 @@ The device would have to include Frequency, Amplitude and DC Offset adjustment. 
 ## Knowledge Base Required
 
 - MPLAB IDE
-  
-    MPLAB is microchips IDE for PIC and now several AVR MCU's. It has all the standarc IDE features including project management and Debugging. Microchip has it's own HAL
+
+    MPLAB is microchips IDE for PIC and now several AVR MCU's. It has all the standard IDE features including project management and Debugging. Microchip has it's own HAL
     called Harmony. I deliberately chose not to use it as I wanted a deeper understanding of the PIC's features.
       
 - C programming language
@@ -70,7 +70,7 @@ The device would have to include Frequency, Amplitude and DC Offset adjustment. 
     
 - EagleCAD
 
-    EagleCAD is a what I designede the PCB in. It's popular among hobbyists because the free version is only limited by board size and not by the number of nodes as is with Orcad PCB Designer for example. It's a good place to start if you're looking to learn PCB designing.
+    EagleCAD is a what I designed the PCB in. It's popular among hobbyists because the free version is only limited by board size and not by the number of nodes as is with Orcad PCB Designer for example. It's a good place to start if you're looking to learn PCB designing.
     
     
 ## Design Breakdown
@@ -90,12 +90,12 @@ I decided to use a relative rotary encoder with an internal pushbutton. The inte
 
 The pushbutton along with the encoder outputs were driven to input GPIO's. I poll the encoder outputs using timer1 triggering an interrupt every 10ms. 
 
+Since the encoder and its pushbutton are mechanical in nature, debouncing is necessary. This is because when a button is pressed, the metal plates make contact and tend to bounce on a microscopic level. This causes jitter or noise on the data line. This jitter can cause unpredictable behaviour as the signal jumps between the logic high and logic low thresholds of the gpio. To prevent this, there are several methods categorised as software and hardware debouncing. More information can be found [here](https://hackaday.com/2015/12/09/embed-with-elliot-debounce-your-noisy-buttons-part-i/). I chose to use hardware debouncing by implementing a simple rc filter to filter high frequency noise.
+
 My code logic is simple. I read both outputs and place them into a single variable. The 0th and 1st bits represent each signal respectively. I enter a switch case where I compare the current configuration to the last polled one. Depending on which output has changed first, I determine if the encoder was rotated clockwise or counter-clockwise.
 
-The intention was for the encoder to be used to select the signal to output along with its frequency. Selecting the option could be done by hitting the pushbutton in the encoder.
-
 ## DAC
-DAC stands for **Digital to Analog Converter**. In short, it converts a digital number to an analog signal whose voltage varies depending on the value of said number. Say your DAC is 8 bits, it can handle numbers between 0 to 255. A value of 255 will output Vmax where as 128 will output 0.5Vmax. 
+DAC stands for **Digital to Analog Converter**. In short, it converts a digital number to an analog signal whose voltage varies depending on the value of said number. Say your DAC is 8 bits, it can handle numbers between 0 to 255. A value of 255 will output Vmax where as 128 will output 0.5*Vmax. 
 
 I did not use the inbuilt DAC. I wanted to build my own using an R - 2R resistor ladder. There is no benefit to this, absolutely none but I did it anyway just to see how good or bad the results would be. You can find a good resource on it [here](https://www.electronics-tutorials.ws/combination/r-2r-dac.html).
 
@@ -106,9 +106,9 @@ I decided to create a lookup table for the signals. It is an array of values tha
 I assigned the DAC pins to PORTB. Then I used the DMA module to transfer the array to PORTB. More information on that below. Depending on which gpio was set or cleared, the DAC put out a certain value between 0 and 5V. 
 
 ## DMA
-DMA stands for **Direct Memory Access**. Basically it is an effective way of trasnfering data from one memory address to another, one peripheral to memory address or one memory address to a peripheral. Depending on the MCU, you may even transfer data from oen peripheral to another. The advantage of using the DMA is that the processor has no role in this transfer. As a result it can go ahead and do other tasks without wasting time and resources on a memory transfer. The DMA runs intependent of the processor.
+DMA stands for **Direct Memory Access**. Basically it is an effective way of transfering data from one memory address to another, one peripheral to memory address or one memory address to a peripheral. Depending on the MCU, you may even transfer data from one peripheral to another. The advantage of using the DMA is that the processor has no role in this transfer. As a result it can go ahead and do other tasks without wasting time and resources on a memory transfer. The DMA runs independent of the processor.
 
-I used the DMA to transfer 256 bytes from a specific lookup table address to the PORTB address. Upon completion, the DMA would trigger an interrupt where in I would trigger the same DMA transaction again resultiing in a repeating signal generated at the DAC. 
+I used the DMA to transfer 256 bytes from a specific lookup table address to the PORTB address. Upon completion, the DMA would trigger an interrupt where in I would trigger the same DMA transaction again resulting in a repeating signal generated at the DAC. 
 
 There is a fundemental flaw in this method. How do you control the frequency of the signal? Instead of changing the rate of transfer to the DAC, I decided to reduce the number of data points of the signal to increase the frequency of the signal. So say for a 1 hz signal I would put out all 256 data points from the lookup table, to increase frequency I would reduce the number of data points. I did this by changing how I traverse the array. I would increase the number of elements to increment by. Thus, at higher frequencies the signal would be completely compromised. Even for a novice, this was a bad idea.
 
@@ -116,26 +116,32 @@ My plan now is to use a timer to trigger a single DMA transfer of 1 element in t
 
  ## LCD
  I used a standard 16x2 LCD interfaced with a parallel port in 8 bit mode. The user would use the rotary encoder to select a highlighted option on the screen. A blinking option would mean you could change that options value. A good resource for interfacing an LCD like this can be found [here](https://circuitdigest.com/microcontroller-projects/16x2-lcd-interfacing-with-pic-microcontroller).
+ 
+It uses an 8 bit parallel port for communication with the MCU. The PIC DIP package does not have enough gpio pins for that so I interfaced it with a 74HC595 shift register. The shift register takes a serial input which I interface with the SPI peripheral on the MCU. More information on shift registers can be found [here](https://lastminuteengineers.com/74hc595-shift-register-arduino-tutorial/).
     
  ## Negative Voltage Generator
- 
+  The negative voltage generator circuit uses an IC555 Timer IC along with a configuration of Diodes and Capacitors to maintain a steady negative voltage of -12V at the output. 
+  
+  An IC555 timer is a common IC used to generate an oscillating signal. To do that, I use it in an Astable mode. By configuring the resistors and capacitors, I set my duty cycle to 50% with an oscillating frequency of 144Hz. This then feeds into the capacitor and diode setup. Detailed information on this can be found [here](https://www.allaboutcircuits.com/projects/build-your-own-negative-voltage-generator/).
     
-    7. Opamp Stage
-    8. Voltage Regulator
+ ## Opamp Stage
+  I use the LM6178 opamp IC which comes with 2 opamps in an inverting amplifier configuration. The first Opamp stage is designed to offset and amplify the Analog signal coming from the DAC. This signal ranges from 0 to 5V. After the first opamp stage, the output signal is inverted and ranges from -1 to 1V. The second stage is designed to allow for user adjusted offset and amplitude using potentiometers. The output of the second stage can range from **I DONT KNOW**
+  
+ ## Voltage Regulator
+  I use the LM2576 5V buck converter to generate the 5V line to power the MCU, IC's and LCD. As a result the system has 3 power rails: 12V, -12V and 5V.
 
 ## Issues
 Given that this was my first major project, a whole host of issues were expected.
 
 1. Diode D1 overlaps the R - 2R ladder.
-2. Diodes D2 and D3 do not fit in the space I provided.
-3. The power Jack is too large to fit on the Board.
+2. Diodes D2 and D3 do not fit in the space I provided on the board.
+3. The power Jack is too large to fit on the board.
 4. Higher frequencies result in the signal getting distorted. Issue is probably a combination of building my own DAC and of how I adjust the frequency in code explained above.
-5. LCD used just looks plan awful hanging off the board.
+5. LCD used just looks plain awful hanging off the board.
 6. Very very poor frequency control. 
 
 ## Future Scope
-For now, this project is on pause. Between work, family and other projects I don't have any immediate plans to work on a version 2.0. However, the changes I will make when I get back to it
-will probably involve:
+For now, this project is on pause. Between work, family and other projects I don't have any immediate plans to work on a version 2.0. However, the changes I will make when I get back to it will probably involve:
 
 1. Replacing the PIC with an STM32. It's faster with clock going as far up as 40Mhz, it executes one instruction per cycle unlike the PIC with 2. The biggest factor
 is the cost. The Pickit 4 debugger is around 7000 rs while an STM32 Nucleo evaluation board with the mcu and debugger is less than 2000 rs.
