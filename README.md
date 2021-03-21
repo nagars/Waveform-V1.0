@@ -146,7 +146,7 @@ LCD + Shift Register:
 ![IMG7](https://user-images.githubusercontent.com/25108047/111902033-5c4dde80-8a61-11eb-9137-9cc83d34e2ac.png)
     
  ## Opamp Stage
-  I use the LM6178 opamp IC which comes with 2 opamps in an inverting amplifier configuration. The first Opamp stage is designed to offset and amplify the Analog signal coming from the DAC. This signal ranges from 0 to 5V. After the first opamp stage, the output signal is inverted and ranges from -1 to 1V. The second stage is designed to allow for user adjusted offset and amplitude using potentiometers. The output of the second stage can range from roughly -10V to 10V.
+  I use the LM6178 opamp IC which comes with 2 opamps in an inverting amplifier configuration. The first Opamp stage is designed to offset and amplify the Analog signal coming from the DAC. This signal ranges from 0 to 5V. After the first opamp stage, the output signal is inverted and ranges from -0.5 to 0.5V. The second stage is designed to allow for user adjusted offset and amplitude using potentiometers. The output of the second stage can range from roughly -10V to 10V with an offset of +-10V.
   
 Opamp Stage 1 & 2:
   
