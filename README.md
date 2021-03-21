@@ -29,7 +29,8 @@ Please bear that in mind if you want to use this for reference.**
     7. Opamp Stage
     8. Voltage Regulator
 3. Issues
-4. Future Scope
+4. Media
+5. Future Scope
 
 ## Objective
 The objective of this project was to make a Waveform Generator based on a PIC24. Signals to be generated included SINE, SAWTOOTH, SQUARE and TRIANGLE. 
@@ -76,6 +77,14 @@ The device would have to include Frequency, Amplitude and DC Offset adjustment. 
 ## Design Breakdown
 I will breakdown the software and hardware for each sub-system of my design.
 
+Layout:
+
+![IMG2](https://user-images.githubusercontent.com/25108047/111902035-5e17a200-8a61-11eb-82b6-40da483f613d.png)
+
+Schematic:
+
+![IMG3](https://user-images.githubusercontent.com/25108047/111902037-5eb03880-8a61-11eb-9837-df3f4ce02d27.png)
+
 ### PIC MCU
 I used the [PIC24FJ64GA002](https://www.microchip.com/wwwproducts/en/PIC24FJ64GA002). Given the simple requirements of this project, almost any mainstream MCU will do.
 Primarily I prioritised the following:
@@ -105,6 +114,10 @@ I decided to create a lookup table for the signals. It is an array of values tha
 
 I assigned the DAC pins to PORTB. Then I used the DMA module to transfer the array to PORTB. More information on that below. Depending on which gpio was set or cleared, the DAC put out a certain value between 0 and 5V. 
 
+R - 2R DAC:
+
+![IMG4](https://user-images.githubusercontent.com/25108047/111902031-59eb8480-8a61-11eb-935d-083f856e2bd3.png)
+
 ## DMA
 DMA stands for **Direct Memory Access**. Basically it is an effective way of transfering data from one memory address to another, one peripheral to memory address or one memory address to a peripheral. Depending on the MCU, you may even transfer data from one peripheral to another. The advantage of using the DMA is that the processor has no role in this transfer. As a result it can go ahead and do other tasks without wasting time and resources on a memory transfer. The DMA runs independent of the processor.
 
@@ -118,17 +131,31 @@ My plan now is to use a timer to trigger a single DMA transfer of 1 element in t
  I used a standard 16x2 LCD interfaced with a parallel port in 8 bit mode. The user would use the rotary encoder to select a highlighted option on the screen. A blinking option would mean you could change that options value. A good resource for interfacing an LCD like this can be found [here](https://circuitdigest.com/microcontroller-projects/16x2-lcd-interfacing-with-pic-microcontroller).
  
 It uses an 8 bit parallel port for communication with the MCU. The PIC DIP package does not have enough gpio pins for that so I interfaced it with a 74HC595 shift register. The shift register takes a serial input which I interface with the SPI peripheral on the MCU. More information on shift registers can be found [here](https://lastminuteengineers.com/74hc595-shift-register-arduino-tutorial/).
+  
+LCD + Shift Register:
+
+![IMG5](https://user-images.githubusercontent.com/25108047/111902039-5f48cf00-8a61-11eb-8d08-3572f9278152.PNG)   
     
  ## Negative Voltage Generator
   The negative voltage generator circuit uses an IC555 Timer IC along with a configuration of Diodes and Capacitors to maintain a steady negative voltage of -12V at the output. 
   
   An IC555 timer is a common IC used to generate an oscillating signal. To do that, I use it in an Astable mode. By configuring the resistors and capacitors, I set my duty cycle to 50% with an oscillating frequency of 144Hz. This then feeds into the capacitor and diode setup. Detailed information on this can be found [here](https://www.allaboutcircuits.com/projects/build-your-own-negative-voltage-generator/).
+
+-12V Generator:
+
+![IMG7](https://user-images.githubusercontent.com/25108047/111902033-5c4dde80-8a61-11eb-9137-9cc83d34e2ac.png)
     
  ## Opamp Stage
-  I use the LM6178 opamp IC which comes with 2 opamps in an inverting amplifier configuration. The first Opamp stage is designed to offset and amplify the Analog signal coming from the DAC. This signal ranges from 0 to 5V. After the first opamp stage, the output signal is inverted and ranges from -1 to 1V. The second stage is designed to allow for user adjusted offset and amplitude using potentiometers. The output of the second stage can range from **I DONT KNOW**
+  I use the LM6178 opamp IC which comes with 2 opamps in an inverting amplifier configuration. The first Opamp stage is designed to offset and amplify the Analog signal coming from the DAC. This signal ranges from 0 to 5V. After the first opamp stage, the output signal is inverted and ranges from -1 to 1V. The second stage is designed to allow for user adjusted offset and amplitude using potentiometers. The output of the second stage can range from roughly -10V to 10V.
+  
+Opamp Stage 1 & 2:
+  
+![IMG6](https://user-images.githubusercontent.com/25108047/111902034-5ce67500-8a61-11eb-8d99-b2166113457e.PNG)
   
  ## Voltage Regulator
   I use the LM2576 5V buck converter to generate the 5V line to power the MCU, IC's and LCD. As a result the system has 3 power rails: 12V, -12V and 5V.
+  
+![IMG8](https://user-images.githubusercontent.com/25108047/111902040-5fe16580-8a61-11eb-8d4a-e74c593ad703.PNG)
 
 ## Issues
 Given that this was my first major project, a whole host of issues were expected.
@@ -139,6 +166,16 @@ Given that this was my first major project, a whole host of issues were expected
 4. Higher frequencies result in the signal getting distorted. Issue is probably a combination of building my own DAC and of how I adjust the frequency in code explained above.
 5. LCD used just looks plain awful hanging off the board.
 6. Very very poor frequency control. 
+
+## Media
+![IMG0](https://user-images.githubusercontent.com/25108047/111902043-6243bf80-8a61-11eb-83cc-fdeb0eadbabf.jpg)
+
+![IMG1](https://user-images.githubusercontent.com/25108047/111902041-6079fc00-8a61-11eb-8380-fa4bee3f90e8.jpg)
+
+Amplitude + Offset Adjustment: https://www.youtube.com/watch?v=x8Yp53ENj-I
+
+Frequency Adjustment: https://www.youtube.com/watch?v=95g6IoSVtfY
+
 
 ## Future Scope
 For now, this project is on pause. Between work, family and other projects I don't have any immediate plans to work on a version 2.0. However, the changes I will make when I get back to it will probably involve:
